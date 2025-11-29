@@ -1,7 +1,7 @@
 // Lazy-loading MediaPipe Tasks Vision FaceLandmarker and a small detector wrapper.
-import type { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
+import type { FaceLandmarker } from '@mediapipe/tasks-vision';
 
-let _resolverPromise: Promise<FilesetResolver> | null = null;
+let _resolverPromise: Promise<any> | null = null;
 let _faceLandmarkerPromise: Promise<FaceLandmarker> | null = null;
 
 export type MPFaceResult = {
@@ -24,7 +24,7 @@ export async function ensureFaceLandmarker() {
     _faceLandmarkerPromise = (async () => {
       const vision = await import('@mediapipe/tasks-vision');
       const resolver = await _resolverPromise!;
-      const landmarker = await vision.FaceLandmarker.createFromOptions(resolver, {
+      const landmarker = await vision.FaceLandmarker.createFromOptions(resolver as any, {
         baseOptions: {
           modelAssetPath:
             'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',

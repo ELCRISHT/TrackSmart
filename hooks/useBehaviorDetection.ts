@@ -128,7 +128,7 @@ export function useBehaviorDetection(
       const isHiddenLong =
         lastVisibilityHiddenRef.current != null &&
         now - lastVisibilityHiddenRef.current > thresholds.awaySeconds * 1000;
-      const isCameraOff = !call || call.camera.state !== 'enabled';
+      const isCameraOff = !call || !(call.camera as any)?.isEnabled;
       const isDistracted =
         lastVisibilityHiddenRef.current != null &&
         now - lastVisibilityHiddenRef.current > thresholds.distractedSeconds * 1000;
@@ -178,7 +178,7 @@ export function useBehaviorDetection(
           const isHiddenLong =
             lastVisibilityHiddenRef.current != null &&
             now - lastVisibilityHiddenRef.current > thresholds.awaySeconds * 1000;
-          const isCameraOff = !call || call.camera.state !== 'enabled';
+          const isCameraOff = !call || !(call.camera as any)?.isEnabled;
           const isDistracted =
             lastVisibilityHiddenRef.current != null &&
             now - lastVisibilityHiddenRef.current > thresholds.distractedSeconds * 1000;
