@@ -38,3 +38,43 @@ next-env.d.ts
 .vscode
 
 .env
+
+# Dataset and training files (preserve but don't commit)
+/train/
+/valid/
+/test/
+/data.yaml
+*.pt
+*.onnx
+*.pth
+*.weights
+*.h5
+*.pb
+*.tflite
+*.tfjs
+yolov5nu.pt
+yolov5nu.onnx
+roboflow.zip
+
+# Training outputs
+/runs/
+*.zip
+
+# Model files in public (if any)
+/public/models/*.onnx
+/public/models/*.pt
+/public/models/yolov5/
+
+# Python training scripts (optional - uncomment if you don't want to commit these)
+# convert_model.py
+# convert_to_onnx.py
+# convert_to_tfjs.py
+# train_and_convert.py
+# train_and_convert_windows.py
+# train_fast.py
+# RUN_THIS.py
+# check_detection_setup.js
+
+# Documentation files (optional - uncomment if you don't want to commit these)
+# *.md
+# !README.md
