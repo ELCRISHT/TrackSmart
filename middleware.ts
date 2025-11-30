@@ -10,40 +10,25 @@ const protectedRoute = createRouteMatcher([
   '/personal-room',
 ]);
 
-// Check if Clerk is properly configured
-const isClerkConfigured = () => {
-  return !!(
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-    process.env.CLERK_SECRET_KEY
-  );
-};
-
 export default clerkMiddleware(async (auth, req) => {
   // Skip API routes completely - they handle their own authentication if needed
   if (req.nextUrl.pathname.startsWith('/api')) {
-    return;
-  }
-
-  // If Clerk is not configured, skip protection (allows deployment without env vars)
-  if (!isClerkConfigured()) {
-    // In development, you might want to log a warning
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Clerk environment variables not set. Skipping authentication.');
-    }
-    return;
+    return NextResponse.next();
   }
 
   // Only protect matching routes
   if (protectedRoute(req)) {
-    try {
-      await auth().protect();
-    } catch (error) {
-      // Log error but don't break the request
-      console.error('Clerk protection error:', error);
-      // Return a response to prevent middleware from hanging
-      return NextResponse.redirect(new URL('/sign-in', req.url));
+    const { userId } = await auth();
+    
+    if (!userId) {
+      // User is not authenticated, redirect to sign-in
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
     }
   }
+
+  return NextResponse.next();
 });
 
 export const config = {
