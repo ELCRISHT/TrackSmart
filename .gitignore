@@ -64,6 +64,8 @@ roboflow.zip
 /public/models/*.onnx
 /public/models/*.pt
 /public/models/yolov5/
+/public/models/*.bin
+/public/models/*.json
 
 # Python training scripts (optional - uncomment if you don't want to commit these)
 # convert_model.py
