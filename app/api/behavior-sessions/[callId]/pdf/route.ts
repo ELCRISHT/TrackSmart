@@ -110,8 +110,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ call
     // Produce PDF bytes
     const bytes = await pdfDoc.save(); // Uint8Array
 
-    // Convert to ArrayBuffer for NextResponse
-    const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    // Create a new ArrayBuffer from the Uint8Array to ensure proper type
+    const arrayBuffer = new ArrayBuffer(bytes.length);
+    const view = new Uint8Array(arrayBuffer);
+    view.set(bytes);
 
     return new NextResponse(arrayBuffer, {
       status: 200,
