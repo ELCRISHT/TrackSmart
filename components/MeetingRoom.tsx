@@ -256,7 +256,6 @@ const MeetingRoom = () => {
           onStatusUpdate={handleStatusUpdate}
           onPermanentRecord={handlePermanentRecord}
           enabled={true}
-          useYOLOv5={false} // Using pure heuristics only (no ML model)
         />
       )}
 

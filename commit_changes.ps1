@@ -61,3 +61,4 @@ Uses pure heuristics only - no ML models required."
     Write-Host "❌ Commit cancelled" -ForegroundColor Red
 }
 
+

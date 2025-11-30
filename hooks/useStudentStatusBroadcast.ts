@@ -24,10 +24,10 @@ export const useStudentStatusBroadcast = (
   const localParticipant = useLocalParticipant();
 
   useEffect(() => {
-    if (!call || !localParticipant?.localParticipant) return;
+    if (!call || !localParticipant) return;
 
-    const user = localParticipant.localParticipant.userId;
-    const userName = localParticipant.localParticipant.name || user;
+    const user = localParticipant.userId;
+    const userName = localParticipant.name || user;
 
     // Broadcast status using custom event
     const statusData: StudentStatusData = {
@@ -39,34 +39,14 @@ export const useStudentStatusBroadcast = (
       hasPermanentRecord,
     };
 
-    // Use Stream's participant update to share status
-    // Note: This uses participant custom data. In production, you might want to use
-    // Stream's reaction system, custom events, or a backend service for more reliable status sharing
-    try {
-      // Update participant with custom data containing status
-      call.updateUserPermissions({
-        user_id: user,
-        custom: {
-          distractionStatus: JSON.stringify(statusData),
-        },
-      }).catch(() => {
-        // Fallback: Store in local storage for cross-tab communication
-        // This is a workaround if Stream API doesn't support the above
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(
-            `student-status-${user}`,
-            JSON.stringify({ ...statusData, timestamp: Date.now() })
-          );
-        }
-      });
-    } catch (error) {
-      // Fallback to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(
-          `student-status-${user}`,
-          JSON.stringify({ ...statusData, timestamp: Date.now() })
-        );
-      }
+    // Store status in localStorage for cross-tab communication
+    // Note: In production, you might want to use Stream's reaction system,
+    // custom events, or a backend service for more reliable status sharing
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        `student-status-${user}`,
+        JSON.stringify({ ...statusData, timestamp: Date.now() })
+      );
     }
   }, [call, localParticipant, status, isDistracted, duration, hasPermanentRecord]);
 };
@@ -81,23 +61,7 @@ export const useStudentStatusListener = (
   useEffect(() => {
     if (!call) return;
 
-    // Listen to participant updates
-    const handleParticipantUpdate = () => {
-      participants.forEach((participant) => {
-        if (participant.custom?.distractionStatus) {
-          try {
-            const statusData = JSON.parse(
-              participant.custom.distractionStatus as string
-            ) as StudentStatusData;
-            onStatusUpdate(statusData);
-          } catch (error) {
-            console.error('Failed to parse distraction status:', error);
-          }
-        }
-      });
-    };
-
-    // Also check localStorage as fallback
+    // Check localStorage for student status updates
     const checkLocalStorage = () => {
       if (typeof window === 'undefined') return;
       
@@ -121,12 +85,10 @@ export const useStudentStatusListener = (
       });
     };
 
-    handleParticipantUpdate();
     checkLocalStorage();
 
     // Poll for updates every 2 seconds
     const interval = setInterval(() => {
-      handleParticipantUpdate();
       checkLocalStorage();
     }, 2000);
 

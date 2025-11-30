@@ -6,7 +6,6 @@ import { useMotionDetection, BehaviorStatus } from '@/hooks/useMotionDetection';
 import { useTabSwitching } from '@/hooks/useTabSwitching';
 import { useDistractionTimer } from '@/hooks/useDistractionTimer';
 import DistractionAlert from './DistractionAlert';
-import { useUser } from '@clerk/nextjs';
 import { useStudentStatusBroadcast } from '@/hooks/useStudentStatusBroadcast';
 
 interface DistractionMonitorProps {
@@ -28,7 +27,6 @@ const DistractionMonitor = ({
 }: DistractionMonitorProps) => {
   const { useLocalParticipant } = useCallStateHooks();
   const localParticipant = useLocalParticipant();
-  const { user } = useUser();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [showAlert, setShowAlert] = useState(false);
   const [alertDuration, setAlertDuration] = useState(0);
