@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { head } from '@vercel/blob';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 export const runtime = 'nodejs';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const FILE = (callId: string) => path.join(DATA_DIR, `session-${callId}.json`);
+const FILE = (callId: string) => `behavior-sessions/${callId}.json`;
 
-export async function GET(req: NextRequest, { params }: { params: { callId: string } }) {
-  const { callId } = params;
-  const file = FILE(callId);
+export async function GET(req: NextRequest, { params }: { params: Promise<{ callId: string }> | { callId: string } }) {
+  const resolvedParams = await Promise.resolve(params);
+  const { callId } = resolvedParams;
 
   try {
-    const raw = await fs.readFile(file, 'utf-8');
+    const blobInfo = await head(FILE(callId));
+    const response = await fetch(blobInfo.url);
+    const raw = await response.text();
     const data = JSON.parse(raw) as {
       callId: string;
       entries: { userId: string; timeline: { status: string; at: number }[] }[];
@@ -22,9 +22,8 @@ export async function GET(req: NextRequest, { params }: { params: { callId: stri
       notes?: string;
     };
 
-    // Create a very simple one-page PDF
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4
+    const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
     const { height } = page.getSize();
     const margin = 50;
     let y = height - margin;
@@ -32,14 +31,16 @@ export async function GET(req: NextRequest, { params }: { params: { callId: stri
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Title
-    const title = `Class Behavior Report`;
-    page.drawText(title, { x: margin, y, size: 18, font: fontBold, color: rgb(0.15, 0.15, 0.15) });
+    page.drawText(`Class Behavior Report`, {
+      x: margin,
+      y,
+      size: 18,
+      font: fontBold,
+      color: rgb(0.15, 0.15, 0.15),
+    });
     y -= 24;
 
-    // Subheader
-    const sub = `Call ID: ${data.callId}`;
-    page.drawText(sub, { x: margin, y, size: 10, font });
+    page.drawText(`Call ID: ${data.callId}`, { x: margin, y, size: 10, font });
     y -= 14;
 
     const when = `Generated: ${new Date(data.endedAt || Date.now()).toLocaleString()}`;
@@ -47,27 +48,48 @@ export async function GET(req: NextRequest, { params }: { params: { callId: stri
     y -= 16;
 
     if (data.startedAt) {
-      page.drawText(`Started: ${new Date(data.startedAt).toLocaleString()}`, { x: margin, y, size: 10, font });
+      page.drawText(`Started: ${new Date(data.startedAt).toLocaleString()}`, {
+        x: margin,
+        y,
+        size: 10,
+        font,
+      });
       y -= 14;
     }
+
     if (data.endedAt) {
-      page.drawText(`Ended: ${new Date(data.endedAt).toLocaleString()}`, { x: margin, y, size: 10, font });
+      page.drawText(`Ended: ${new Date(data.endedAt).toLocaleString()}`, {
+        x: margin,
+        y,
+        size: 10,
+        font,
+      });
       y -= 16;
     }
 
-    // Notes (wrapped)
     if (data.notes) {
-      y = drawWrapped(page, `Notes: ${data.notes}`, { x: margin, y, size: 10, font, maxChars: 90, lineGap: 12 });
+      y = drawWrapped(page, `Notes: ${data.notes}`, {
+        x: margin,
+        y,
+        size: 10,
+        font,
+        maxChars: 90,
+        lineGap: 12,
+      });
       y -= 8;
     }
 
-    // Divider
-    page.drawText('Students', { x: margin, y, size: 12, font: fontBold });
+    page.drawText('Students', {
+      x: margin,
+      y,
+      size: 12,
+      font: fontBold,
+    });
     y -= 16;
 
-    // Per-student one-liners; limit to fit single page
-    const MAX_LINES = 30; // keep simple to avoid multipage complexity
+    const MAX_LINES = 30;
     let lines = 0;
+
     for (const s of data.entries) {
       if (lines >= MAX_LINES || y < margin + 14) break;
 
@@ -77,19 +99,26 @@ export async function GET(req: NextRequest, { params }: { params: { callId: stri
         s.timeline.filter((e) => e.status === 'Attentive').length,
         s.timeline.length,
       );
+
       const line = `${s.userId}  |  Avg: ${avg}  |  Attentive: ${attentiveRate}%  |  Distracted: ${distracted}`;
+
       page.drawText(line, { x: margin, y, size: 10, font });
       y -= 12;
       lines++;
     }
 
-    const bytes = await pdfDoc.save();
-    const body = Buffer.from(bytes);
-    return new NextResponse(body, {
+    // Produce PDF bytes
+    const bytes = await pdfDoc.save(); // Uint8Array
+
+    // Convert to ArrayBuffer for NextResponse
+    const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+
+    return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="behavior-${callId}.pdf"`,
+        'Content-Length': String(bytes.byteLength),
       },
     });
   } catch (e: any) {
@@ -99,7 +128,12 @@ export async function GET(req: NextRequest, { params }: { params: { callId: stri
 
 function averageScore(timeline: { status: string; at: number }[]): number {
   if (!timeline?.length) return 0;
-  const map: Record<string, number> = { Attentive: 100, Distracted: 50, Inattentive: 25, Away: 0 };
+  const map: Record<string, number> = {
+    Attentive: 100,
+    Distracted: 50,
+    Inattentive: 25,
+    Away: 0,
+  };
   const vals = timeline.map((e) => map[e.status] ?? 0);
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 }
@@ -117,10 +151,11 @@ function drawWrapped(
   const { x, y, size, font, maxChars, lineGap = 12 } = opts;
   const lines = wrapText(text, maxChars).split('\n');
   let yy = y;
+
   for (const ln of lines) {
     page.drawText(ln, { x, y: yy, size, font });
     yy -= lineGap;
-    if (yy < 60) break; // safety to avoid overflow
+    if (yy < 60) break;
   }
   return yy;
 }
@@ -130,6 +165,7 @@ function wrapText(text: string, cols: number): string {
   const words = text.split(/\s+/);
   let line = '';
   const lines: string[] = [];
+
   for (const w of words) {
     if ((line + ' ' + w).trim().length > cols) {
       lines.push(line.trim());
@@ -138,6 +174,7 @@ function wrapText(text: string, cols: number): string {
       line += ' ' + w;
     }
   }
+
   if (line.trim()) lines.push(line.trim());
   return lines.join('\n');
 }

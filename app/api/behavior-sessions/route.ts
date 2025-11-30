@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { put } from '@vercel/blob';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const FILE = (callId: string) => path.join(DATA_DIR, `session-${callId}.json`);
+const FILE = (callId: string) => `behavior-sessions/${callId}.json`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,8 +17,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(FILE(callId), JSON.stringify({ callId, entries, startedAt, endedAt }, null, 2), 'utf-8');
+    const data = JSON.stringify({ callId, entries, startedAt, endedAt }, null, 2);
+    
+    await put(FILE(callId), data, {
+      access: 'public',
+      contentType: 'application/json',
+    });
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
