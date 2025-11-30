@@ -38,16 +38,7 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_STREAM_API_KEY=your_stream_api_key
 STREAM_SECRET_KEY=your_stream_secret_key
-BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
 ```
-
-#### How to get Vercel Blob Token:
-
-1. In your Vercel dashboard, go to **Storage**
-2. Click **"Create Database"** → Select **"Blob"**
-3. Create a new Blob store (or use existing)
-4. Go to **Settings** → Copy the **"Read and Write Token"**
-5. Add it as `BLOB_READ_WRITE_TOKEN` in environment variables
 
 ### 4. Configure Clerk for Production
 
@@ -84,7 +75,6 @@ Update your Clerk dashboard settings:
 
 - [ ] Test authentication (sign in/sign up)
 - [ ] Test video meeting creation
-- [ ] Test behavior monitoring features
 - [ ] Test PDF report generation
 - [ ] Verify all environment variables are set
 - [ ] Check Vercel function logs for errors

@@ -20,19 +20,9 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_STREAM_API_KEY=your_stream_key
 STREAM_SECRET_KEY=your_stream_secret
-BLOB_READ_WRITE_TOKEN=vercel_blob_token
 ```
 
-### 3. Get Vercel Blob Token
-
-1. In Vercel Dashboard → **Storage** tab
-2. Click **"Create Database"** → Select **"Blob"**
-3. Create a new Blob store (name it anything, e.g., "behavior-sessions")
-4. Go to the Blob store → **Settings** tab
-5. Copy the **"Read and Write Token"**
-6. Add it as `BLOB_READ_WRITE_TOKEN` in environment variables
-
-### 4. Configure Clerk
+### 3. Configure Clerk
 
 1. Go to [clerk.com](https://clerk.com) dashboard
 2. Your App → **Domains**
@@ -42,7 +32,7 @@ BLOB_READ_WRITE_TOKEN=vercel_blob_token
    - `https://your-app.vercel.app/sign-in`
    - `https://your-app.vercel.app/sign-up`
 
-### 5. Configure Stream.io
+### 4. Configure Stream.io
 
 1. Go to [getstream.io](https://getstream.io) dashboard
 2. Your App → **Settings**
@@ -86,8 +76,6 @@ vercel
 - [ ] Create a new meeting
 - [ ] Join a meeting
 - [ ] Video/audio works
-- [ ] Behavior monitoring (teacher view)
-- [ ] Save behavior session
 - [ ] Download PDF report
 
 ### If Something Breaks:

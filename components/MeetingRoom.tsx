@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   CallControls,
   CallParticipantsList,
@@ -8,7 +8,6 @@ import {
   PaginatedGridLayout,
   SpeakerLayout,
   useCallStateHooks,
-  useCall,
 } from '@stream-io/video-react-sdk';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Users, LayoutList } from 'lucide-react';
@@ -23,8 +22,6 @@ import {
 import Loader from './Loader';
 import EndCallButton from './EndCallButton';
 import { cn } from '@/lib/utils';
-import { useBehaviorDetection, BehaviorMode } from '@/hooks/useBehaviorDetection';
-import TeacherBehaviorMonitor from './TeacherBehaviorMonitor';
 
 type CallLayoutType = 'grid' | 'speaker-left' | 'speaker-right';
 
@@ -34,20 +31,10 @@ const MeetingRoom = () => {
   const router = useRouter();
   const [layout, setLayout] = useState<CallLayoutType>('speaker-left');
   const [showParticipants, setShowParticipants] = useState(false);
-  const [mode, setMode] = useState<BehaviorMode>('light');
-  const { useCallCallingState, useLocalParticipant } = useCallStateHooks();
-  const call = useCall();
-
+  const { useCallCallingState } = useCallStateHooks();
   // for more detail about types of CallingState see: https://getstream.io/video/docs/react/ui-cookbook/ringing-call/#incoming-call-panel
   const callingState = useCallCallingState();
-
-  const { status } = useBehaviorDetection({ mode });
-  const local = useLocalParticipant();
-  const isTeacher = useMemo(() => {
-    const createdById = call?.state.createdBy?.id;
-    return !!(local && createdById && local.userId === createdById);
-  }, [call?.state.createdBy?.id, local]);
-
+  
   if (callingState !== CallingState.JOINED) return <Loader />;
 
   const CallLayout = () => {
@@ -74,14 +61,6 @@ const MeetingRoom = () => {
         >
           <CallParticipantsList onClose={() => setShowParticipants(false)} />
         </div>
-        {/* Local behavior badge - visible only to the user */}
-        <div className="absolute left-4 top-4 z-40">
-          <span className="rounded-full bg-black/60 px-3 py-1 text-xs">
-            You: {status}
-          </span>
-        </div>
-        {/* Teacher-only monitor */}
-        {isTeacher && <TeacherBehaviorMonitor />}
       </div>
       {/* video layout and call controls */}
       <div className="fixed bottom-0 flex w-full items-center justify-center gap-5">
@@ -89,7 +68,7 @@ const MeetingRoom = () => {
 
         <DropdownMenu>
           <div className="flex items-center">
-            <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]  " aria-label="Layout and detection options">
+            <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]  " aria-label="Layout options">
               <LayoutList size={20} className="text-white" />
             </DropdownMenuTrigger>
           </div>
@@ -106,11 +85,6 @@ const MeetingRoom = () => {
                 <DropdownMenuSeparator className="border-dark-1" />
               </div>
             ))}
-            <div>
-              <DropdownMenuItem onClick={() => setMode(mode === 'light' ? 'mediapipe' : 'light')}>
-                Detection: {mode === 'light' ? 'Light' : 'MediaPipe (Hi-Fi)'}
-              </DropdownMenuItem>
-            </div>
           </DropdownMenuContent>
         </DropdownMenu>
         <CallStatsButton />
